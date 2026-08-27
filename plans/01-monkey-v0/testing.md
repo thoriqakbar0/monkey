@@ -1,0 +1,43 @@
+# Monkey version-zero testing
+
+[Back to the overview](overview.md).
+
+## Static checks
+
+Run syntax checks for every Zsh file. Run `git diff --check` and the product-description link checker.
+
+## Runtime matrix
+
+Every case records stdout, stderr, status, final `PWD`, branch, and `git worktree list --porcelain -z`.
+
+| Case | Required result |
+| --- | --- |
+| Invalid argument count | Status `2`; no Git or directory change. |
+| Invalid branch | Status `2`; no destination created. |
+| Outside Git | Nonzero status; original `PWD` remains. |
+| Existing worktree | Enter its registered path without mutation. |
+| Existing unclaimed branch | Create and enter the deterministic destination. |
+| Missing branch | Create from the captured source `HEAD`. |
+| Repeated call | Enter the same registered worktree. |
+| Occupied destination | Preserve the path and report a conflict. |
+| Stale registration | Preserve state and name the explicit Git recovery step. |
+| Same-name race | At most one creator mutates Git; the loser preserves `PWD`. |
+| Ctrl+C | Status `130`; no automatic deletion. |
+| Source branch moves | New branch still starts at the captured commit. |
+| Ignored dependencies | `node_modules`, `.venv`, and `target` remain absent. |
+| Spaces and Unicode | Enter the exact canonical path. |
+| Newline in source path | NUL-delimited parsing preserves the path. |
+| Installer rerun | One installed file and one startup source line remain. |
+| Installed Zsh session | `.zshrc` loads Monkey, then Monkey creates and enters a worktree. |
+
+## Real surface
+
+Use `zsh/zpty` for automated interactive checks. It verifies that `builtin cd` changes the same shell process.
+
+After automation passes, run one installed Zsh session manually. Create, leave, and re-enter one disposable worktree.
+
+## Failure policy
+
+An inconclusive PTY observation is not a pass. Preserve the repository and capture the exact command output.
+
+Do not test automatic deletion. Version zero performs no removal or garbage collection.
