@@ -1,0 +1,5 @@
+$ cd /work/app
+$ monkey -c spike/parser
+created /work/.rifts/app/spike-parser
+$ pwd
+/work/.rifts/app/spike-parser

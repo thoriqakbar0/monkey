@@ -12,7 +12,7 @@ The vocabulary used across the Monkey product description.
 
 **Git worktree.** A workspace created through Git's worktree mechanism. It has its own checked-out files and index, while Git shares repository object storage.
 
-**Full snapshot.** An explicit workspace mode that includes tracked files, ignored files, and heavy dependency directories. The planned backend is Rift with its copy-all behavior.
+**Full snapshot.** A workspace created by `monkey -c <name>`. Rift copies tracked files, ignored files, and heavy dependency directories with copy-on-write storage.
 
 ## Storage
 

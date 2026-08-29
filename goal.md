@@ -6,20 +6,19 @@ Read `architecture.md` before implementation planning. Follow `plans/01-monkey-v
 
 ## Source of truth
 
-The Monkey repository is the source for implemented behavior. The version-zero implementation is committed on `main`.
+The Monkey repository is the source for implemented behavior. Use the current working tree and passing suites as evidence.
 
-Run `tests/monkey.zsh` and `tests/pty.zsh` before changing a verified claim. `architecture.md` owns version-zero runtime boundaries.
+Check Git state before claiming that behavior is committed, pushed, or released.
+
+Run the Zsh, Bash, PTY, and Rift suites before changing a verified claim. `architecture.md` owns runtime boundaries.
 
 For external behavior, inspect the exact installed Git, Jujutsu, and Rift versions. Prefer official documentation and direct local tests over assumptions.
 
 ## Writing rules
 
 - Describe what the user sees, runs, and finds on disk.
-- Use the eight-section template in `README.md` for every feature document.
-- Keep the interrupt rows and cross-cutting order identical across feature documents.
 - Use terms from `glossary.md`; define a missing term before using it.
 - Use direct sentences and sentence-case headings.
-- Put essential mechanisms only in `> Technical note:` blocks.
 - Mark unsupported behavior as an open question.
 - Never present planned behavior as implemented or verified.
 - Link to the document that owns a rule instead of repeating it.
@@ -31,23 +30,23 @@ For external behavior, inspect the exact installed Git, Jujutsu, and Rift versio
 - Every destination is Git-backed.
 - Git worktree is the default creation mode.
 - Default worktrees do not copy ignored dependency directories.
-- Full snapshot is an explicit future mode backed by Rift.
+- Full snapshot is the explicit `monkey -c <name>` mode backed by Rift.
 - Full snapshot includes ignored files and heavy directories such as `node_modules`, `.venv`, and `target`.
 - On macOS, a successful Rift copy-on-write clone on the same APFS filesystem initially shares physical data blocks.
 - Source and snapshot remain separate paths; later writes allocate private blocks for changed data.
 - Logical size tools may count both directory trees even while physical blocks remain shared.
 - Cross-filesystem destinations cannot use APFS block sharing.
-- Behavior when copy-on-write cloning is unavailable remains an open product decision.
+- Monkey fails without creating a snapshot when Rift or filesystem copy-on-write support is unavailable.
 - Jujutsu support is a future configurable module, not a version-zero requirement.
 - REPL and agent integrations are future work.
 
-## Order of work
+## Documentation map
 
-1. Draft `foundations/invocation.md` and `foundations/workspace.md`.
-2. Draft and verify `workspaces/create.md` as the pilot.
-3. Draft `cross-cutting/storage.md`.
-4. Draft `workspaces/full-snapshot.md` and verify it on APFS.
-5. Run a consistency and link pass, then update the coverage table.
+- `README.md` owns installation, usage, and test entry points.
+- `docs/how-monkey-works.md` explains the complete user-visible runtime path.
+- `architecture.md` owns internal boundaries and design decisions.
+- `plans/01-monkey-v0/testing.md` owns the behavior matrix.
+- `glossary.md` owns shared terms.
 
 ## Working rules
 

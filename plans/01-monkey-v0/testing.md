@@ -4,7 +4,7 @@
 
 ## Static checks
 
-Run syntax checks for every Zsh file. Run `git diff --check` and the product-description link checker.
+Run syntax checks for every Zsh and Bash file. Run `git diff --check` and the product-description link checker.
 
 ## Runtime matrix
 
@@ -29,6 +29,16 @@ Every case records stdout, stderr, status, final `PWD`, branch, and `git worktre
 | Newline in source path | NUL-delimited parsing preserves the path. |
 | Installer rerun | One installed file and one startup source line remain. |
 | Installed Zsh session | `.zshrc` loads Monkey, then Monkey creates and enters a worktree. |
+| Full snapshot | Rift copies ignored dependencies, creates the requested branch, and changes `PWD`. |
+| Snapshot write | A write in the snapshot does not change the source file. |
+| Repeated copy | Enter the registered Rift snapshot without copying again. |
+| Linked source | Reject a linked Git worktree before Rift initialization. |
+| Snapshot collision | Preserve an occupied destination and the source repository. |
+| Snapshot race | One operation creates the snapshot; every retry converges on the registered path. |
+| Snapshot Ctrl+C | Status `130`; preserve `PWD` and release the process lock. |
+| Same branch in both modes | Copy mode enters the snapshot and preserves the normal worktree registration. |
+| Bash current shell | Both workspace modes change the calling Bash process directory. |
+| Bash startup | `.bashrc` and `.bash_profile` load the installed native function once. |
 
 ## Real surface
 

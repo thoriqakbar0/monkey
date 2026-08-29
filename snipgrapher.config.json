@@ -1,0 +1,15 @@
+{
+  "theme": "githubDark",
+  "fontFamily": "JetBrains Mono",
+  "fontSize": 18,
+  "padding": 40,
+  "lineNumbers": false,
+  "windowControls": false,
+  "shadow": false,
+  "backgroundStyle": "solid",
+  "format": "png",
+  "defaultProfile": "readme",
+  "profiles": {
+    "readme": {}
+  }
+}

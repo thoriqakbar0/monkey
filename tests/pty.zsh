@@ -128,9 +128,63 @@ function interrupt_returns_130() {
   }
 }
 
+function copy_interrupt_releases_lock() {
+  local repo="$SUITE_ROOT/copy-interrupt/repo"
+  local bin="$SUITE_ROOT/copy-interrupt/bin"
+  local marker="$SUITE_ROOT/copy-interrupt/rift-started"
+  local lock="$SUITE_ROOT/copy-interrupt/.rifts/repo/.monkey.lock"
+  new_repo "$repo"
+  command mkdir -p -- "$bin"
+  {
+    print -r -- '#!/bin/zsh'
+    print -r -- 'if [[ $1 == init ]]; then'
+    print -r -- '  print -r -- test-rift > "$3/.rift"'
+    print -r -- '  : > "$MONKEY_RIFT_MARKER"'
+    print -r -- '  sleep 30'
+    print -r -- 'fi'
+    print -r -- 'exit 1'
+  } > "$bin/rift"
+  command chmod +x "$bin/rift"
+  export MONKEY_RIFT_MARKER=$marker
+  export PATH="$bin:$PATH"
+
+  start_session monkey_copy_interrupt || return
+  zpty -w monkey_copy_interrupt "source ${(q)PROJECT_ROOT}/shell/monkey.zsh"$'\n'
+  zpty -w monkey_copy_interrupt "cd ${(q)repo}"$'\n'
+  zpty -w monkey_copy_interrupt 'print -r -- __MONKEY_SETUP__'$'\n'
+  read_until monkey_copy_interrupt $'__MONKEY_SETUP__\r\n' || return
+  zpty -w monkey_copy_interrupt "monkey -c pty/copy-interrupt"$'\n'
+
+  local attempts=0 pending='' chunk
+  while [[ ! -e $marker && $attempts -lt 100 ]]; do
+    if zpty -r -t monkey_copy_interrupt chunk; then
+      pending+=$chunk
+    fi
+    sleep 0.05
+    (( attempts += 1 ))
+  done
+  [[ -e $marker ]] || {
+    print -u2 -r -- "$pending"
+    return 1
+  }
+
+  zpty -w monkey_copy_interrupt $'\C-c'
+  sleep 0.1
+  zpty -w monkey_copy_interrupt 'print -r -- "__MONKEY_STATUS__${?} __MONKEY_PWD__${PWD}"'$'\n'
+  read_until monkey_copy_interrupt '__MONKEY_STATUS__' || return
+  local output=${REPLY//$'\r'/}
+  zpty -d monkey_copy_interrupt
+  [[ $output == *"__MONKEY_STATUS__130 __MONKEY_PWD__$repo"* ]] || {
+    print -u2 -r -- "$pending$output"
+    return 1
+  }
+  [[ ! -e $lock ]]
+}
+
 run_test 'zpty proves monkey changes the current shell directory' same_shell_cd
 run_test 'zpty proves the installed startup file loads monkey' installed_shell_cd
 run_test 'zpty proves Ctrl+C returns 130 and preserves PWD' interrupt_returns_130
+run_test 'zpty proves copy interruption releases its process lock' copy_interrupt_releases_lock
 
 print -r -- "1..$TEST_COUNT"
 (( TEST_FAILURES == 0 ))

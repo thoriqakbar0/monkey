@@ -4,6 +4,8 @@
 
 The current working tree implements all eight phases. The repository and PTY suites are the completion evidence.
 
+The later `monkey -c` mode and Bash integration sit outside this original worktree plan. The Rift and Bash suites own their evidence.
+
 ## Context
 
 Monkey removes the repeated branch, path, worktree, and `cd` steps from local work. The first release needs one reliable command.
@@ -84,13 +86,24 @@ Run these project-level checks:
 
 ```console
 for file in shell/monkey.zsh scripts/install.zsh; do zsh -n "$file" || exit; done
+/bin/bash -n shell/monkey.bash tests/bash.bash
 zsh -f tests/monkey.zsh
 zsh -f tests/pty.zsh
+zsh -f tests/rift.zsh
+/bin/bash tests/bash.bash
 git diff --check
 python3 /Users/thor/.codex/skills/product-description/references/check-links.py .
 ```
 
 Read [testing.md](testing.md) for the complete behavior matrix.
+
+## Documentation
+
+The README owns installation, usage, and test entry points.
+
+[How Monkey works](../../docs/how-monkey-works.md) explains the runtime path, storage model, retries, and failure boundaries.
+
+[Architecture](../../architecture.md) remains the source for internal design decisions.
 
 ## Implementation guidance
 

@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+
+set timeout 10
+set project $env(MONKEY_PROJECT_ROOT)
+set repo $env(MONKEY_TEST_REPO)
+set marker $env(MONKEY_RIFT_MARKER)
+set lock_file $env(MONKEY_LOCK_FILE)
+
+spawn -noecho /bin/bash --noprofile --norc
+send -- "PS1=; source \"$project/shell/monkey.bash\"; cd \"$repo\"; printf '__MONKEY_READY__\\n'\r"
+expect -exact "__MONKEY_READY__"
+send -- "monkey -c bash/interrupt\r"
+
+for {set attempt 0} {$attempt < 100 && ![file exists $marker]} {incr attempt} {
+  after 50
+}
+if {![file exists $marker]} {
+  exit 1
+}
+
+send -- "\003"
+after 100
+send -- {printf '__MONKEY_STATUS__%s __MONKEY_PWD__%s\n' "$?" "$PWD"}
+send -- "\r"
+expect -exact "__MONKEY_STATUS__130 __MONKEY_PWD__$repo"
+
+if {[file exists $lock_file]} {
+  exit 1
+}
+
+send -- "exit\r"
+expect eof

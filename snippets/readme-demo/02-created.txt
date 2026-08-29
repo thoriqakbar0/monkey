@@ -1,0 +1,5 @@
+$ cd /work/app
+$ monkey feat/login
+created /work/.worktrees/app/feat-login
+$ pwd
+/work/.worktrees/app/feat-login

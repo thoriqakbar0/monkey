@@ -27,6 +27,11 @@ function invalid_invocations() {
   assert_equal "$before" "$PWD" 'no-argument call changed PWD' || return
   assert_equal '' "$(<"$SUITE_ROOT/invalid/no-args.out")" 'usage wrote stdout' || return
 
+  monkey -c > "$SUITE_ROOT/invalid/copy-no-name.out" 2> "$SUITE_ROOT/invalid/copy-no-name.err"
+  exit_code=$?
+  assert_equal 2 "$exit_code" 'copy without a name status changed' || return
+  assert_equal "$before" "$PWD" 'copy without a name changed PWD' || return
+
   monkey 'bad name' > "$SUITE_ROOT/invalid/bad.out" 2> "$SUITE_ROOT/invalid/bad.err"
   exit_code=$?
   assert_equal 2 "$exit_code" 'invalid-branch status changed' || return
@@ -43,6 +48,23 @@ function outside_git() {
   exit_code=$?
   (( exit_code != 0 )) || return 1
   assert_equal "$before" "$PWD" 'outside-git call changed PWD'
+}
+
+function missing_rift_preserves_state() {
+  local repo="$SUITE_ROOT/missing-rift/repo"
+  local bin="$SUITE_ROOT/missing-rift/bin"
+  local real_git=$(command -v git)
+  new_repo "$repo"
+  command mkdir -p -- "$bin"
+  command ln -s -- "$real_git" "$bin/git"
+  builtin cd -- "$repo"
+  local before=$PWD exit_code
+  PATH="$bin" monkey -c feat/missing-rift > "$SUITE_ROOT/missing-rift/out" 2> "$SUITE_ROOT/missing-rift/err"
+  exit_code=$?
+  assert_equal 127 "$exit_code" 'missing-Rift status changed' || return
+  assert_equal "$before" "$PWD" 'missing-Rift failure changed PWD' || return
+  [[ ! -e "$repo/.rift" && ! -e "$SUITE_ROOT/missing-rift/.rifts" ]] || return 1
+  assert_file_contains "$SUITE_ROOT/missing-rift/err" 'copy mode requires rift'
 }
 
 function create_and_repeat() {
@@ -228,14 +250,23 @@ function branch_lookup_failure() {
 
 function installer_is_idempotent() {
   print -r -- 'export EXISTING=1' > "$HOME/.zshrc"
+  print -r -- 'export BASHRC_EXISTING=1' > "$HOME/.bashrc"
+  print -r -- 'export BASH_PROFILE_EXISTING=1' > "$HOME/.bash_profile"
   "$PROJECT_ROOT/scripts/install.zsh" || return
   "$PROJECT_ROOT/scripts/install.zsh" || return
   command cmp -s "$PROJECT_ROOT/shell/monkey.zsh" "$XDG_CONFIG_HOME/monkey/monkey.zsh" || return 1
-  assert_equal 1 "$(command grep -Fc 'source "${XDG_CONFIG_HOME:-$HOME/.config}/monkey/monkey.zsh"' "$HOME/.zshrc")" 'installer duplicated the source line'
+  command cmp -s "$PROJECT_ROOT/shell/monkey.bash" "$XDG_CONFIG_HOME/monkey/monkey.bash" || return 1
+  assert_equal 1 "$(command grep -Fc 'source "${XDG_CONFIG_HOME:-$HOME/.config}/monkey/monkey.zsh"' "$HOME/.zshrc")" 'installer duplicated the Zsh source line' || return
+  assert_equal 1 "$(command grep -Fc 'source "${XDG_CONFIG_HOME:-$HOME/.config}/monkey/monkey.bash"' "$HOME/.bashrc")" 'installer duplicated the Bash rc source line' || return
+  assert_equal 1 "$(command grep -Fc 'source "${XDG_CONFIG_HOME:-$HOME/.config}/monkey/monkey.bash"' "$HOME/.bash_profile")" 'installer duplicated the Bash profile source line' || return
+  assert_file_contains "$HOME/.zshrc" 'export EXISTING=1' || return
+  assert_file_contains "$HOME/.bashrc" 'export BASHRC_EXISTING=1' || return
+  assert_file_contains "$HOME/.bash_profile" 'export BASH_PROFILE_EXISTING=1'
 }
 
 run_test 'invalid invocation preserves state' invalid_invocations
 run_test 'outside Git preserves PWD' outside_git
+run_test 'missing Rift preserves state' missing_rift_preserves_state
 run_test 'missing branch creates from HEAD and repeat enters' create_and_repeat
 run_test 'registered worktree enters its exact path' existing_registered_worktree
 run_test 'existing unclaimed branch attaches' attach_existing_branch
