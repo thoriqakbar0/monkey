@@ -59,6 +59,8 @@ Ignored directories are not copied. A new worktree must install or build depende
 
 `monkey -c <branch>` asks Rift for a full snapshot of the primary worktree.
 
+[Rift](https://github.com/anomalyco/rift) is an experimental snapshot tool. Monkey uses its CLI as the optional copy-mode backend. Monkey does not require Jujutsu.
+
 The snapshot includes tracked changes, untracked files, ignored files, and heavy directories such as `node_modules`, `.venv`, and `target`.
 
 New snapshots use this path:
@@ -79,7 +81,9 @@ The creation path is:
 
 Rift uses APFS clones on supported macOS filesystems. The two paths initially share physical data blocks.
 
-A write changes only one path. The filesystem allocates new blocks for changed data while unchanged data can remain shared.
+A copy-on-write clone looks like a complete copy, but unchanged files still point to the same physical blocks.
+
+A write changes only one path. APFS allocates new blocks for changed data while unchanged data can remain shared.
 
 Logical size tools can count both directory trees. That does not prove that APFS stored two physical copies.
 

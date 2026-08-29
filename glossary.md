@@ -14,6 +14,8 @@ The vocabulary used across the Monkey product description.
 
 **Full snapshot.** A workspace created by `monkey -c <name>`. Rift copies tracked files, ignored files, and heavy dependency directories with copy-on-write storage.
 
+**Rift.** An experimental snapshot tool used as Monkey's optional `-c` backend. Rift creates filesystem-level copy-on-write clones.
+
 ## Storage
 
 **Logical copy.** The complete directory tree visible in a full snapshot. Tools that total file sizes may count both source and destination, even when the filesystem shares their physical blocks.

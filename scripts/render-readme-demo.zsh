@@ -24,30 +24,52 @@ fi
 
 command mkdir -p -- "$project_root/assets"
 
-typeset source_file frame_name
-for source_file in "$project_root"/snippets/readme-demo/*.txt; do
-  frame_name=${source_file:t:r}
-  command cp -- "$source_file" "$frame_dir/monkey"
-  command npx --yes snipgrapher@0.1.0 render "$frame_dir/monkey" \
-    --profile readme \
-    --language bash \
-    --format png \
-    --scale 2 \
-    --output "$frame_dir/$frame_name.raw.png"
-  command magick "$frame_dir/$frame_name.raw.png" \
-    -background '#0d1117' \
-    -gravity northwest \
-    -extent 1100x650 \
-    "$frame_dir/$frame_name.png"
+typeset demo_name source_dir language output canvas delay_one delay_two delay_three delay_four source_file frame_name
+for demo_name in monkey rift; do
+  if [[ $demo_name == monkey ]]; then
+    source_dir="$project_root/snippets/readme-demo"
+    language=bash
+    output="$project_root/assets/monkey-demo.gif"
+    canvas=1100x650
+    delay_one=90
+    delay_two=150
+    delay_three=120
+    delay_four=170
+  else
+    source_dir="$project_root/snippets/rift-demo"
+    language=text
+    output="$project_root/assets/rift-copy-on-write.gif"
+    canvas=1100x760
+    delay_one=100
+    delay_two=150
+    delay_three=170
+    delay_four=190
+  fi
+
+  for source_file in "$source_dir"/*.txt; do
+    frame_name=${source_file:t:r}
+    command cp -- "$source_file" "$frame_dir/$demo_name"
+    command npx --yes snipgrapher@0.1.0 render "$frame_dir/$demo_name" \
+      --profile readme \
+      --language "$language" \
+      --format png \
+      --scale 2 \
+      --output "$frame_dir/raw-$demo_name-$frame_name.png"
+    command magick "$frame_dir/raw-$demo_name-$frame_name.png" \
+      -background '#0d1117' \
+      -gravity northwest \
+      -extent "$canvas" \
+      "$frame_dir/$demo_name-$frame_name.png"
+  done
+
+  command magick \
+    -delay "$delay_one" "$frame_dir/$demo_name-01-"*.png \
+    -delay "$delay_two" "$frame_dir/$demo_name-02-"*.png \
+    -delay "$delay_three" "$frame_dir/$demo_name-03-"*.png \
+    -delay "$delay_four" "$frame_dir/$demo_name-04-"*.png \
+    -loop 0 \
+    -layers Optimize \
+    "$output"
+
+  print -r -- "$output"
 done
-
-command magick \
-  -delay 90 "$frame_dir/01-start.png" \
-  -delay 150 "$frame_dir/02-created.png" \
-  -delay 120 "$frame_dir/03-entered.png" \
-  -delay 170 "$frame_dir/04-copy.png" \
-  -loop 0 \
-  -layers Optimize \
-  "$project_root/assets/monkey-demo.gif"
-
-print -r -- "$project_root/assets/monkey-demo.gif"

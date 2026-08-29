@@ -1,0 +1,4 @@
+before copy mode
+
+block A       source/app.ts
+blocks B + C  source/node_modules

@@ -56,6 +56,10 @@ Copy mode also requires Rift:
 npm install -g rift-snapshot
 ```
 
+Rift is optional. Normal `monkey <branch>` usage needs only Git and your shell.
+
+Monkey does not require Jujutsu. It uses Rift only when you choose `-c`.
+
 ## usage
 
 Open a branch in a normal Git worktree:
@@ -111,7 +115,9 @@ The two modes save different things:
 
 A repeat call reads Git or Rift again. It enters the completed workspace instead of creating another one.
 
-## copy mode
+## Rift copy mode
+
+[Rift](https://github.com/anomalyco/rift) is an experimental tool for making fast directory snapshots. Monkey uses it without duplicating every disk block immediately.
 
 Run copy mode from the primary Git worktree:
 
@@ -128,6 +134,18 @@ The destination is:
 ```
 
 Rift uses APFS copy-on-write clones on macOS. The source and snapshot initially share physical data blocks. Changes remain isolated and allocate new blocks.
+
+Copy-on-write means both directories initially point to the same unchanged data on disk. They are still separate directories.
+
+When either side changes a file, APFS writes new blocks for that changed data. The other directory keeps its original data.
+
+This makes a complete snapshot containing `node_modules` cheap at creation time. Disk usage grows as the two directories change.
+
+<p align="center">
+  <img src="assets/rift-copy-on-write.gif" alt="Rift creates a full snapshot that shares unchanged APFS blocks, then changed files receive new blocks." width="760">
+</p>
+
+Tools such as `du` may count the full logical size of both directories. That number does not show how many physical blocks remain shared.
 
 Monkey disables Rift hooks to preserve the copied state. It attaches or creates the requested branch inside the copied Git repository.
 
@@ -170,14 +188,4 @@ The Rift suite verifies full copies, isolated writes, retry, linked-worktree rej
 
 The Bash suite runs against the macOS system Bash `3.2` and verifies both workspace modes plus fresh-shell installation.
 
-Monkey targets Zsh and Bash on macOS. Git worktrees remain the default. Jujutsu workspaces and a REPL remain future work.
-
-## regenerate the animation
-
-The animation uses `snippets/readme-demo/` and the `readme` profile in `snipgrapher.config.json`.
-
-It requires `npx` and ImageMagick:
-
-```console
-zsh scripts/render-readme-demo.zsh
-```
+Monkey targets Zsh and Bash on macOS. Git worktrees remain the default. Jujutsu is not a dependency.

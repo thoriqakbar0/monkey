@@ -1,0 +1,9 @@
+after monkey -c feat/login
+
+block A
+  source/app.ts
+  rift/app.ts
+
+blocks B + C
+  source/node_modules
+  rift/node_modules

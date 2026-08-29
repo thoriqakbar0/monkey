@@ -1,0 +1,9 @@
+edit rift/app.ts
+
+block A
+  source/app.ts
+
+new block D
+  rift/app.ts
+
+blocks B + C still back both node_modules
