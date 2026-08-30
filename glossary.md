@@ -28,6 +28,14 @@ The vocabulary used across the Monkey product description.
 
 **Heavy directory.** An ignored or generated directory whose contents can be expensive to recreate, such as `node_modules`, `.venv`, `target`, `dist`, `build`, or `coverage`.
 
+## Repository hooks
+
+**Git hook.** An executable script that Git runs for a named event, such as `pre-commit` or `pre-push`.
+
+**Hook directory.** The checked-in `.monkey/hooks` directory selected through Git's `core.hooksPath` setting.
+
+**Hook manager.** A tool that owns `core.hooksPath`. Monkey preserves another hook manager's value instead of replacing it.
+
 ## Invocations and endings
 
 **Invocation.** One execution of Monkey, including argument validation, workspace creation, output, and exit.

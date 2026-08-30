@@ -49,6 +49,8 @@ Monkey supports Zsh and the macOS system Bash `3.2`. The workspace name is also 
 
 Git worktrees remain the default. `-c` creates a full snapshot through Rift. Jujutsu workspaces, a REPL, and agent protocols remain future modules.
 
+`monkey hook install` activates checked-in Git hooks from `.monkey/hooks`. It refuses to replace another configured hook directory.
+
 Copy mode requires the primary Git worktree because Rift rejects linked Git worktree sources. It requires a copy-on-write filesystem and never falls back to a full byte copy.
 
 ## Data shape
@@ -73,6 +75,7 @@ The branch slug replaces `/` with `-`. A path collision fails without changing e
 
 ```text
 monkey [-c] <name> -> changes PWD on success and returns a shell status
+monkey hook <install|uninstall> -> changes local Git configuration and returns a shell status
 ```
 
 Version zero has no public internal API. The function calls Git directly.
@@ -102,6 +105,15 @@ Copy mode applies these rules:
 7. Attach or create the requested branch inside the copied repository.
 8. Enter the snapshot only after Git branch setup succeeds.
 
+Hook installation applies these rules:
+
+1. Require `.monkey/hooks` to be a real directory in the current repository.
+2. Read the effective `core.hooksPath` value.
+3. Stop if another hook manager owns the value.
+4. Set the local value to `.monkey/hooks`.
+
+Hook removal unsets only a local value that equals `.monkey/hooks`. It preserves every other value and every hook script.
+
 ## Failure and retry
 
 Git arbitrates branch and worktree races with its own locks. One same-name creator can succeed. A losing invocation returns nonzero and leaves its shell unchanged.
@@ -125,6 +137,8 @@ created <absolute-path>
 entered <absolute-path>
 ```
 
+Hook commands print the installed or uninstalled hook directory. A repeated uninstall prints `hooks are not installed`.
+
 Usage and state errors go to stderr. Invalid invocation uses status `2`. Missing copy dependencies use `127`, and an active copy lock uses `75`.
 
 The command has no JSON mode. PTY tests own the human contract.
@@ -140,6 +154,9 @@ shell/monkey.bash
 
 scripts/install.zsh
   installs both functions for one macOS user
+
+.monkey/hooks/
+  checked-in Git hook scripts activated by monkey hook install
 
 tests/
   disposable Git repositories, shell integration checks, and real Rift checks
@@ -167,6 +184,8 @@ The [pnpm worktree workflow](https://github.com/pnpm/pnpm/blob/main/CONTRIBUTING
 - We accept Rift as an optional dependency only for explicit copy mode.
 - We accept no machine protocol until a real second caller needs one.
 - We accept a fixed destination rule until real use proves configuration necessary.
+- We use Git's `core.hooksPath` instead of adding Husky or another runtime dependency.
+- We refuse hook-manager composition because Git accepts only one effective hook directory.
 
 ## Remaining risks
 
@@ -176,6 +195,8 @@ The [pnpm worktree workflow](https://github.com/pnpm/pnpm/blob/main/CONTRIBUTING
 - Submodules, filters, and checkout hooks may change creation failure behavior.
 - Rift CLI listing uses newline-delimited paths, so copy mode rejects source paths containing a newline.
 - Rift snapshot creation can succeed before Git branch setup fails. A retry completes setup from detached `HEAD`.
+- Hook installation trusts the checked-in scripts. The user must inspect them before activation.
+- A worktree whose branch lacks `.monkey/hooks` has no matching hook scripts to run.
 
 ## Next product step
 

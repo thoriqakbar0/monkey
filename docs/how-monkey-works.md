@@ -55,6 +55,24 @@ Git worktrees share the repository object database. Each worktree keeps its own 
 
 Ignored directories are not copied. A new worktree must install or build dependencies when it needs them.
 
+## Repository hook flow
+
+`monkey hook install` activates executable Git hooks from `.monkey/hooks`.
+
+The installation path is:
+
+1. Monkey finds the current repository root.
+2. Monkey requires `.monkey/hooks` to be a real directory.
+3. Git reports the effective `core.hooksPath` value.
+4. Monkey stops when another hook manager owns that value.
+5. Git sets the local value to `.monkey/hooks`.
+
+Git runs a matching executable script for events such as `pre-commit` and `pre-push`.
+
+Hook scripts run repository code on the user's machine. The user must inspect the scripts before installation.
+
+`monkey hook uninstall` removes only a local `.monkey/hooks` value. It leaves the hook scripts unchanged.
+
 ## Copy-on-write flow
 
 `monkey -c <branch>` asks Rift for a full snapshot of the primary worktree.
@@ -98,6 +116,8 @@ Monkey has no workspace database.
 | Branches and normal worktree registrations | Git |
 | Snapshot source marker and snapshot registrations | Rift |
 | Copy-operation lock | Monkey, through `shlock` |
+| Hook selection | Git, through local `core.hooksPath` configuration |
+| Hook scripts | The repository, under `.monkey/hooks` |
 | Current directory | The calling shell |
 
 The Zsh and Bash implementations use the same paths and visible behavior. Each shell has native code so it can change its own directory.
@@ -148,7 +168,7 @@ Jujutsu workspaces, configurable destinations, a REPL, and agent protocols remai
 
 ## Verification
 
-The disposable Git suites verify branch creation, worktree entry, collisions, retries, interrupts, and unusual paths.
+The disposable Git suites verify branch creation, worktree entry, hook execution, collisions, retries, interrupts, and unusual paths.
 
 The real Rift suite verifies complete snapshots, isolated writes, repeated entry, locking, and linked-worktree rejection.
 

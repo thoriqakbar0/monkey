@@ -180,6 +180,52 @@ installer_loads_fresh_bash() {
   HOME="$HOME" XDG_CONFIG_HOME="$XDG_CONFIG_HOME" /bin/bash --noprofile --rcfile "$HOME/.bashrc" -i -c 'type monkey >/dev/null' >/dev/null 2>&1
 }
 
+hook_installation_is_safe() {
+  local repo="$SUITE_ROOT/hooks/repo"
+  local marker="$SUITE_ROOT/hooks/ran"
+  new_repo "$repo"
+  builtin cd -- "$repo"
+  local before=$PWD exit_code
+
+  monkey hook install > "$SUITE_ROOT/hooks/missing.out" 2> "$SUITE_ROOT/hooks/missing.err"
+  exit_code=$?
+  assert_equal 1 "$exit_code" 'Bash missing hook directory status changed' || return
+  assert_equal '' "$(command git config --local --get core.hooksPath)" 'Bash missing hook directory changed Git config' || return
+
+  command mkdir -p -- "$repo/.monkey/hook-target"
+  command ln -s -- hook-target "$repo/.monkey/hooks"
+  monkey hook install > "$SUITE_ROOT/hooks/symlink.out" 2> "$SUITE_ROOT/hooks/symlink.err"
+  exit_code=$?
+  assert_equal 1 "$exit_code" 'Bash symbolic-link hook directory status changed' || return
+  assert_equal '' "$(command git config --local --get core.hooksPath)" 'Bash symbolic-link hook directory changed Git config' || return
+
+  command rm -- "$repo/.monkey/hooks"
+  command mkdir -p -- "$repo/.monkey/hooks"
+  {
+    printf '%s\n' '#!/bin/sh'
+    printf '%s\n' ': > "$MONKEY_HOOK_MARKER"'
+  } > "$repo/.monkey/hooks/pre-commit"
+  command chmod +x "$repo/.monkey/hooks/pre-commit"
+  monkey hook install > "$SUITE_ROOT/hooks/install.out" 2> "$SUITE_ROOT/hooks/install.err" || return
+  monkey hook install > "$SUITE_ROOT/hooks/reinstall.out" 2> "$SUITE_ROOT/hooks/reinstall.err" || return
+  assert_equal '.monkey/hooks' "$(command git config --local --get core.hooksPath)" 'Bash hook path changed' || return
+  assert_equal "$before" "$PWD" 'Bash hook installation changed PWD' || return
+
+  printf '%s\n' changed > "$repo/tracked.txt"
+  command git add tracked.txt
+  MONKEY_HOOK_MARKER=$marker command git commit -qm 'run hook' || return
+  [[ -f $marker ]] || return 1
+
+  monkey hook uninstall > "$SUITE_ROOT/hooks/uninstall.out" 2> "$SUITE_ROOT/hooks/uninstall.err" || return
+  monkey hook uninstall > "$SUITE_ROOT/hooks/reuninstall.out" 2> "$SUITE_ROOT/hooks/reuninstall.err" || return
+  command git config --local core.hooksPath '.husky/_'
+  monkey hook install > "$SUITE_ROOT/hooks/conflict.out" 2> "$SUITE_ROOT/hooks/conflict.err"
+  exit_code=$?
+  assert_equal 1 "$exit_code" 'Bash hook conflict status changed' || return
+  assert_equal '.husky/_' "$(command git config --local --get core.hooksPath)" 'Bash overwrote another hook manager' || return
+  assert_file_contains "$SUITE_ROOT/hooks/conflict.err" 'another hook manager owns core.hooksPath'
+}
+
 copy_interrupt_returns_130_and_releases_lock() {
   command -v expect >/dev/null 2>&1 || return 0
   local root="$SUITE_ROOT/interrupt"
@@ -215,6 +261,7 @@ run_test 'Bash creates and re-enters a real Rift snapshot' full_snapshot_create_
 run_test 'Bash copy mode does not enter a normal worktree' copy_mode_does_not_enter_normal_worktree
 run_test 'installer loads Monkey in a fresh interactive Bash' installer_loads_fresh_bash
 run_test 'Bash copy interruption returns 130 and releases its lock' copy_interrupt_returns_130_and_releases_lock
+run_test 'Bash hook install runs scripts and preserves other managers' hook_installation_is_safe
 
 printf '1..%s\n' "$TEST_COUNT"
 (( TEST_FAILURES == 0 ))

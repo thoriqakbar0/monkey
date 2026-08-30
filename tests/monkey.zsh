@@ -37,6 +37,11 @@ function invalid_invocations() {
   assert_equal 2 "$exit_code" 'invalid-branch status changed' || return
   assert_equal "$before" "$PWD" 'invalid branch changed PWD' || return
   [[ ! -e "$SUITE_ROOT/invalid/.worktrees" ]] || return 1
+
+  monkey hook unknown > "$SUITE_ROOT/invalid/hook.out" 2> "$SUITE_ROOT/invalid/hook.err"
+  exit_code=$?
+  assert_equal 2 "$exit_code" 'invalid hook action status changed' || return
+  assert_equal "$before" "$PWD" 'invalid hook action changed PWD'
 }
 
 function outside_git() {
@@ -264,6 +269,56 @@ function installer_is_idempotent() {
   assert_file_contains "$HOME/.bash_profile" 'export BASH_PROFILE_EXISTING=1'
 }
 
+function hook_installation_is_safe() {
+  local repo="$SUITE_ROOT/hooks/repo"
+  local marker="$SUITE_ROOT/hooks/ran"
+  new_repo "$repo"
+  builtin cd -- "$repo"
+  local before=$PWD exit_code
+
+  monkey hook install > "$SUITE_ROOT/hooks/missing.out" 2> "$SUITE_ROOT/hooks/missing.err"
+  exit_code=$?
+  assert_equal 1 "$exit_code" 'missing hook directory status changed' || return
+  assert_equal "$before" "$PWD" 'missing hook directory changed PWD' || return
+  assert_equal '' "$(command git config --local --get core.hooksPath)" 'missing hook directory changed Git config' || return
+
+  command mkdir -p -- "$repo/.monkey/hook-target"
+  command ln -s -- hook-target "$repo/.monkey/hooks"
+  monkey hook install > "$SUITE_ROOT/hooks/symlink.out" 2> "$SUITE_ROOT/hooks/symlink.err"
+  exit_code=$?
+  assert_equal 1 "$exit_code" 'symbolic-link hook directory status changed' || return
+  assert_equal '' "$(command git config --local --get core.hooksPath)" 'symbolic-link hook directory changed Git config' || return
+
+  command rm -- "$repo/.monkey/hooks"
+  command mkdir -p -- "$repo/.monkey/hooks"
+  {
+    print -r -- '#!/bin/sh'
+    print -r -- ': > "$MONKEY_HOOK_MARKER"'
+  } > "$repo/.monkey/hooks/pre-commit"
+  command chmod +x "$repo/.monkey/hooks/pre-commit"
+
+  monkey hook install > "$SUITE_ROOT/hooks/install.out" 2> "$SUITE_ROOT/hooks/install.err" || return
+  monkey hook install > "$SUITE_ROOT/hooks/reinstall.out" 2> "$SUITE_ROOT/hooks/reinstall.err" || return
+  assert_equal '.monkey/hooks' "$(command git config --local --get core.hooksPath)" 'hook path changed' || return
+  assert_equal "$before" "$PWD" 'hook installation changed PWD' || return
+
+  print -r -- changed > "$repo/tracked.txt"
+  command git add tracked.txt
+  MONKEY_HOOK_MARKER=$marker command git commit -qm 'run hook' || return
+  [[ -f $marker ]] || return 1
+
+  monkey hook uninstall > "$SUITE_ROOT/hooks/uninstall.out" 2> "$SUITE_ROOT/hooks/uninstall.err" || return
+  monkey hook uninstall > "$SUITE_ROOT/hooks/reuninstall.out" 2> "$SUITE_ROOT/hooks/reuninstall.err" || return
+  assert_equal '' "$(command git config --local --get core.hooksPath)" 'hook uninstall left local Git config' || return
+
+  command git config --local core.hooksPath '.husky/_'
+  monkey hook install > "$SUITE_ROOT/hooks/conflict.out" 2> "$SUITE_ROOT/hooks/conflict.err"
+  exit_code=$?
+  assert_equal 1 "$exit_code" 'existing hook manager conflict status changed' || return
+  assert_equal '.husky/_' "$(command git config --local --get core.hooksPath)" 'existing hook manager was overwritten' || return
+  assert_file_contains "$SUITE_ROOT/hooks/conflict.err" 'another hook manager owns core.hooksPath'
+}
+
 run_test 'invalid invocation preserves state' invalid_invocations
 run_test 'outside Git preserves PWD' outside_git
 run_test 'missing Rift preserves state' missing_rift_preserves_state
@@ -277,6 +332,7 @@ run_test 'source branch movement does not change captured HEAD' captured_head_su
 run_test 'same-name race has one creator and retry converges' same_name_race
 run_test 'branch lookup failure does not start creation' branch_lookup_failure
 run_test 'installer rerun stays idempotent' installer_is_idempotent
+run_test 'hook install runs scripts and preserves other managers' hook_installation_is_safe
 
 print -r -- "1..$TEST_COUNT"
 (( TEST_FAILURES == 0 ))

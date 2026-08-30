@@ -39,6 +39,11 @@ Every case records stdout, stderr, status, final `PWD`, branch, and `git worktre
 | Same branch in both modes | Copy mode enters the snapshot and preserves the normal worktree registration. |
 | Bash current shell | Both workspace modes change the calling Bash process directory. |
 | Bash startup | `.bashrc` and `.bash_profile` load the installed native function once. |
+| Hook install | Set local `core.hooksPath` to `.monkey/hooks` and preserve `PWD`. |
+| Hook execution | A real Git commit runs the matching executable script. |
+| Hook reinstall | Keep the same local value and report success. |
+| Hook conflict | Preserve another hook manager's effective value. |
+| Hook uninstall | Unset only Monkey's local value and preserve all scripts. |
 
 ## Real surface
 

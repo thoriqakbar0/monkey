@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+project_root=$(git rev-parse --show-toplevel)
+cd "$project_root"
+
+for file in shell/monkey.zsh scripts/install.zsh tests/monkey.zsh tests/pty.zsh tests/rift.zsh; do
+  zsh -n "$file"
+done
+
+/bin/bash -n shell/monkey.bash tests/bash.bash
+zsh -f tests/monkey.zsh
+git diff --cached --check

@@ -37,6 +37,9 @@ For external behavior, inspect the exact installed Git, Jujutsu, and Rift versio
 - Logical size tools may count both directory trees even while physical blocks remain shared.
 - Cross-filesystem destinations cannot use APFS block sharing.
 - Monkey fails without creating a snapshot when Rift or filesystem copy-on-write support is unavailable.
+- `monkey hook install` activates checked-in scripts from `.monkey/hooks`.
+- Hook installation preserves another manager's `core.hooksPath` value.
+- `monkey hook uninstall` removes only Monkey's local hook setting.
 - Jujutsu support is a future configurable module, not a version-zero requirement.
 - REPL and agent integrations are future work.
 

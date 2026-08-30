@@ -2,12 +2,65 @@ function monkey() {
   emulate -L zsh
   setopt localoptions no_shwordsplit
 
+  if (( $# >= 2 )) && [[ $1 == hook ]]; then
+    if (( $# != 2 )) || [[ $2 != install && $2 != uninstall ]]; then
+      print -u2 -r -- "usage: monkey hook <install|uninstall>"
+      return 2
+    fi
+
+    local hook_action=$2
+    local hook_root
+    hook_root=$(command git rev-parse --show-toplevel) || return $?
+    local hook_path='.monkey/hooks'
+
+    if [[ $hook_action == install ]]; then
+      if [[ ! -d "$hook_root/$hook_path" || -L "$hook_root/$hook_path" ]]; then
+        print -u2 -r -- "monkey: hook directory is missing or unsafe: $hook_root/$hook_path"
+        return 1
+      fi
+
+      local configured_hook_path
+      configured_hook_path=$(command git config --get core.hooksPath 2>/dev/null)
+      local config_status=$?
+      if (( config_status == 0 )) && [[ $configured_hook_path != "$hook_path" ]]; then
+        print -u2 -r -- "monkey: another hook manager owns core.hooksPath: $configured_hook_path"
+        return 1
+      elif (( config_status > 1 )); then
+        print -u2 -r -- "monkey: could not inspect core.hooksPath"
+        return "$config_status"
+      fi
+
+      command git config --local core.hooksPath "$hook_path" || return $?
+      print -r -- "installed hooks from $hook_root/$hook_path"
+      return 0
+    fi
+
+    local local_hook_path
+    local_hook_path=$(command git config --local --get core.hooksPath 2>/dev/null)
+    local config_status=$?
+    if (( config_status == 1 )); then
+      print -r -- "hooks are not installed"
+      return 0
+    elif (( config_status > 1 )); then
+      print -u2 -r -- "monkey: could not inspect local core.hooksPath"
+      return "$config_status"
+    elif [[ $local_hook_path != "$hook_path" ]]; then
+      print -u2 -r -- "monkey: refusing to remove another hook manager: $local_hook_path"
+      return 1
+    fi
+
+    command git config --local --unset core.hooksPath || return $?
+    print -r -- "uninstalled hooks from $hook_root/$hook_path"
+    return 0
+  fi
+
   local mode=worktree
   if (( $# == 2 )) && [[ $1 == '-c' ]]; then
     mode=copy
     shift
   elif (( $# != 1 )); then
     print -u2 -r -- "usage: monkey [-c] <name>"
+    print -u2 -r -- "       monkey hook <install|uninstall>"
     return 2
   fi
 

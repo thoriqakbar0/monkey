@@ -96,6 +96,40 @@ Monkey rejects invalid branch names and occupied destinations. It does not remov
 
 For the complete runtime path, storage model, and failure rules, read [How Monkey works](docs/how-monkey-works.md).
 
+## repository hooks
+
+Monkey can activate checked-in Git hook scripts without adding a Node dependency. It borrows [Husky's](https://typicode.github.io/husky/) repository-owned hook pattern, but it does not install Husky.
+
+Create an executable hook in `.monkey/hooks`. This example checks the repository before each commit:
+
+```sh
+#!/bin/sh
+
+set -eu
+pnpm test
+```
+
+Save the file as `.monkey/hooks/pre-commit`, then activate the directory:
+
+```console
+chmod +x .monkey/hooks/pre-commit
+monkey hook install
+```
+
+Monkey sets the repository's `core.hooksPath` to `.monkey/hooks`. Git then runs the checked-in script for each matching Git event.
+
+Inspect every hook before installation. Git hooks run repository code on your machine.
+
+Monkey refuses installation when Husky or another tool already owns `core.hooksPath`. It does not replace or combine hook managers.
+
+Remove only Monkey's hook setting with:
+
+```console
+monkey hook uninstall
+```
+
+The command leaves `.monkey/hooks` unchanged. You can keep the scripts in Git or remove them yourself.
+
 ## choose a mode
 
 Use normal mode for a clean branch checkout. Use `-c` when you need the current files and installed dependencies.

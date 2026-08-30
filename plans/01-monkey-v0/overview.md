@@ -2,7 +2,7 @@
 
 ## Status
 
-The current working tree implements all eight phases. The repository and PTY suites are the completion evidence.
+The current working tree implements all nine phases. The repository and PTY suites are the completion evidence.
 
 The later `monkey -c` mode and Bash integration sit outside this original worktree plan. The Rift and Bash suites own their evidence.
 
@@ -22,6 +22,7 @@ This plan includes:
 - Deterministic sibling storage under `.worktrees`.
 - Safe failure, retry, interruption, and same-name races.
 - User-level Zsh installation.
+- Safe activation of checked-in Git hooks.
 - Disposable repository and PTY verification.
 
 This plan excludes:
@@ -40,6 +41,7 @@ This plan excludes:
 - Git `2.55` behavior is the current reference.
 - Git worktree records are the only durable workspace state.
 - Monkey preserves unknown files and ambiguous Git state.
+- Monkey preserves an existing `core.hooksPath` value.
 - The first release adds no runtime dependency or package manager.
 - Every user-visible claim needs a disposable-repository or PTY check.
 
@@ -79,6 +81,7 @@ The implementer must use these skills:
 6. [Handle retry and interruption](phase-6-retry-interrupt.md).
 7. [Install the shell function](phase-7-install.md).
 8. [Verify and document the command](phase-8-acceptance.md).
+9. [Activate repository hooks](phase-9-repository-hooks.md).
 
 ## Verification
 
@@ -86,6 +89,7 @@ Run these project-level checks:
 
 ```console
 for file in shell/monkey.zsh scripts/install.zsh; do zsh -n "$file" || exit; done
+/bin/sh -n .monkey/hooks/pre-commit
 /bin/bash -n shell/monkey.bash tests/bash.bash
 zsh -f tests/monkey.zsh
 zsh -f tests/pty.zsh
