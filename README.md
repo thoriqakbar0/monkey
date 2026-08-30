@@ -15,9 +15,13 @@ Monkey creates the destination when it is missing. Then it moves your current sh
 
 ## install
 
-Run the installer:
+Monkey supports macOS. It requires Git and either Zsh or the system Bash `3.2`.
+
+Clone the repository, then run the installer:
 
 ```console
+git clone https://github.com/thoriqakbar0/monkey.git
+cd monkey
 zsh scripts/install.zsh
 ```
 
@@ -56,7 +60,7 @@ Copy mode also requires Rift:
 npm install -g rift-snapshot
 ```
 
-Rift is optional. Normal `monkey <branch>` usage needs only Git and your shell.
+Rift is optional. Normal `monkey <branch>` usage needs Git and either Zsh or the system Bash `3.2`.
 
 Monkey does not require Jujutsu. It uses Rift only when you choose `-c`.
 
@@ -74,7 +78,7 @@ Monkey now handles the branch state for you:
 - if the branch exists without a worktree, Monkey creates and enters its worktree
 - if the branch is missing, Monkey creates it from your current `HEAD`
 
-For a new worktree, `feat/login` becomes:
+If the primary repository is `/work/app`, a new `feat/login` worktree becomes:
 
 ```text
 /work/.worktrees/app/feat-login
@@ -92,21 +96,9 @@ Monkey rejects invalid branch names and occupied destinations. It does not remov
 
 For the complete runtime path, storage model, and failure rules, read [How Monkey works](docs/how-monkey-works.md).
 
-## what happens inside
+## choose a mode
 
-Monkey must run inside the current shell. A standalone program cannot change its parent shell directory.
-
-For `monkey feat/login`, Monkey does this:
-
-1. Git validates the branch name.
-2. Monkey captures the current `HEAD` commit.
-3. Git reports every registered worktree.
-4. Monkey finds the worktree for `feat/login` or creates it.
-5. The shell runs `cd` only after Git succeeds.
-
-Monkey keeps no database. Git owns branches and normal worktrees. Rift owns full-copy snapshots.
-
-The two modes save different things:
+Use normal mode for a clean branch checkout. Use `-c` when you need the current files and installed dependencies.
 
 | Command | What appears in the new directory | What stays shared |
 | --- | --- | --- |
@@ -117,7 +109,7 @@ A repeat call reads Git or Rift again. It enters the completed workspace instead
 
 ## Rift copy mode
 
-[Rift](https://github.com/anomalyco/rift) is an experimental tool for making fast directory snapshots. Monkey uses it without duplicating every disk block immediately.
+[Rift](https://github.com/anomalyco/rift) is an experimental directory snapshot tool. Monkey uses it without duplicating unchanged file data immediately.
 
 Run copy mode from the primary Git worktree:
 
@@ -139,7 +131,9 @@ Copy-on-write means both directories initially point to the same unchanged data 
 
 When either side changes a file, APFS writes new blocks for that changed data. The other directory keeps its original data.
 
-This makes a complete snapshot containing `node_modules` cheap at creation time. Disk usage grows as the two directories change.
+The snapshot still contains `node_modules`. At creation, unchanged file data does not require a second set of physical blocks.
+
+Disk usage grows as the two directories change.
 
 <p align="center">
   <img src="assets/rift-copy-on-write.gif" alt="Rift creates a full snapshot that shares unchanged APFS blocks, then changed files receive new blocks." width="760">
@@ -159,7 +153,7 @@ Monkey leaves the current directory unchanged when an operation fails.
 
 It preserves occupied destinations and stale registrations. Monkey reports the conflict instead of deleting files or guessing which state is correct.
 
-Copy operations use `.rifts/<repository>/.monkey.lock`. Rift `0.0.10` cannot initialize one source safely from two processes.
+Copy operations use `.rifts/<repository>/.monkey.lock`. The lock prevents two commands from initializing the same Rift source at once.
 
 | Status | Meaning |
 | --- | --- |
@@ -188,4 +182,18 @@ The Rift suite verifies full copies, isolated writes, retry, linked-worktree rej
 
 The Bash suite runs against the macOS system Bash `3.2` and verifies both workspace modes plus fresh-shell installation.
 
-Monkey targets Zsh and Bash on macOS. Git worktrees remain the default. Jujutsu is not a dependency.
+Monkey targets Zsh and Bash on macOS. Git worktrees remain the default.
+
+## uninstall
+
+Remove the Monkey source line from each shell file that the installer changed:
+
+| File | Line to remove |
+| --- | --- |
+| `${ZDOTDIR:-$HOME}/.zshrc` | `source "${XDG_CONFIG_HOME:-$HOME/.config}/monkey/monkey.zsh"` |
+| `$HOME/.bashrc` | `source "${XDG_CONFIG_HOME:-$HOME/.config}/monkey/monkey.bash"` |
+| `$HOME/.bash_profile` | `source "${XDG_CONFIG_HOME:-$HOME/.config}/monkey/monkey.bash"` |
+
+Then delete `monkey.zsh` and `monkey.bash` from `${XDG_CONFIG_HOME:-$HOME/.config}/monkey/`.
+
+Remove the `monkey` directory only when it is empty.
