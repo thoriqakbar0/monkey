@@ -28,7 +28,6 @@ This plan includes:
 This plan excludes:
 
 - Rift snapshot creation.
-- Jujutsu workspace creation.
 - REPL, daemon, JSON, MCP, and agent protocols.
 - Worktree removal, garbage collection, or automatic repair.
 - Bash, Fish, Nushell, Linux, and Windows support.

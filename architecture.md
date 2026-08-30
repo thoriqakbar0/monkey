@@ -47,7 +47,7 @@ Only sourced shell code can change the current shell directory. A standalone pro
 
 Monkey supports Zsh and the macOS system Bash `3.2`. The workspace name is also the exact Git branch name.
 
-Git worktrees remain the default. `-c` creates a full snapshot through Rift. Jujutsu workspaces, a REPL, and agent protocols remain future modules.
+Git worktrees remain the default. `-c` creates a full snapshot through Rift. A REPL and agent protocols remain future modules.
 
 `monkey hook install` activates checked-in Git hooks from `.monkey/hooks`. It refuses to replace another configured hook directory.
 
@@ -200,4 +200,4 @@ The [pnpm worktree workflow](https://github.com/pnpm/pnpm/blob/main/CONTRIBUTING
 
 ## Next product step
 
-Use both modes in daily work before adding Jujutsu or destination configuration.
+Use both modes in daily work before adding destination configuration.

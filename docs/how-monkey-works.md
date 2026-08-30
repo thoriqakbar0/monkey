@@ -77,7 +77,7 @@ Hook scripts run repository code on the user's machine. The user must inspect th
 
 `monkey -c <branch>` asks Rift for a full snapshot of the primary worktree.
 
-[Rift](https://github.com/anomalyco/rift) is an experimental snapshot tool. Monkey uses its CLI as the optional copy-mode backend. Monkey does not require Jujutsu.
+[Rift](https://github.com/anomalyco/rift) is an experimental snapshot tool. Monkey uses its CLI as the optional copy-mode backend.
 
 The snapshot includes tracked changes, untracked files, ignored files, and heavy directories such as `node_modules`, `.venv`, and `target`.
 
@@ -164,7 +164,7 @@ Copy mode must start in the primary worktree. Rift rejects linked Git worktrees 
 
 Copy mode rejects a source path containing a newline because Rift lists snapshots with newline-delimited paths.
 
-Jujutsu workspaces, configurable destinations, a REPL, and agent protocols remain future modules.
+Configurable destinations, a REPL, and agent protocols remain future modules.
 
 ## Verification
 

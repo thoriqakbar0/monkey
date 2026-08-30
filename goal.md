@@ -12,7 +12,7 @@ Check Git state before claiming that behavior is committed, pushed, or released.
 
 Run the Zsh, Bash, PTY, and Rift suites before changing a verified claim. `architecture.md` owns runtime boundaries.
 
-For external behavior, inspect the exact installed Git, Jujutsu, and Rift versions. Prefer official documentation and direct local tests over assumptions.
+For external behavior, inspect the exact installed Git and Rift versions. Prefer official documentation and direct local tests over assumptions.
 
 ## Writing rules
 
@@ -40,7 +40,6 @@ For external behavior, inspect the exact installed Git, Jujutsu, and Rift versio
 - `monkey hook install` activates checked-in scripts from `.monkey/hooks`.
 - Hook installation preserves another manager's `core.hooksPath` value.
 - `monkey hook uninstall` removes only Monkey's local hook setting.
-- Jujutsu support is a future configurable module, not a version-zero requirement.
 - REPL and agent integrations are future work.
 
 ## Documentation map

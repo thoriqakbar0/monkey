@@ -9,6 +9,11 @@ Monkey is a shell function for opening one Git branch in its own directory.
 
 Monkey creates the destination when it is missing. Then it moves your current shell into that directory.
 
+> [!WARNING]
+> Monkey is highly experimental. Its commands, paths, and recovery behavior can change. Use it only with repositories you can recover.
+>
+> Rift is also experimental. A Rift snapshot is a working copy, not a backup.
+
 <p align="center">
   <img src="assets/monkey-demo.gif" alt="Monkey creates and enters a Git worktree, then creates a Rift snapshot." width="760">
 </p>
@@ -61,8 +66,6 @@ npm install -g rift-snapshot
 ```
 
 Rift is optional. Normal `monkey <branch>` usage needs Git and either Zsh or the system Bash `3.2`.
-
-Monkey does not require Jujutsu. It uses Rift only when you choose `-c`.
 
 ## usage
 
@@ -145,6 +148,8 @@ A repeat call reads Git or Rift again. It enters the completed workspace instead
 
 [Rift](https://github.com/anomalyco/rift) is an experimental directory snapshot tool. Monkey uses it without duplicating unchanged file data immediately.
 
+Copy mode writes Rift metadata in the source repository and creates snapshot state outside it. Keep the source repository intact until you finish the snapshot work.
+
 Run copy mode from the primary Git worktree:
 
 ```console
@@ -217,6 +222,10 @@ The Rift suite verifies full copies, isolated writes, retry, linked-worktree rej
 The Bash suite runs against the macOS system Bash `3.2` and verifies both workspace modes plus fresh-shell installation.
 
 Monkey targets Zsh and Bash on macOS. Git worktrees remain the default.
+
+## license
+
+Monkey uses the [MIT License](LICENSE).
 
 ## uninstall
 
